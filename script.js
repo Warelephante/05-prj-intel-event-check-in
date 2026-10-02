@@ -4,7 +4,55 @@ const teamSelect = document.getElementById("teamSelect");
 const attendeeCount = document.getElementById("attendeeCount");
 
 let count = 0;
-const max_count = 2;
+const max_count = 50;
+const storageKey = "intelEventTeamCounts";
+
+function loadSavedCounts() {
+  try {
+    const savedCounts = localStorage.getItem(storageKey);
+    if (!savedCounts) {
+      return;
+    }
+
+    const teamCounts = JSON.parse(savedCounts);
+    if (
+      Number.isInteger(teamCounts.water) &&
+      teamCounts.water >= 0 &&
+      Number.isInteger(teamCounts.zero) &&
+      teamCounts.zero >= 0 &&
+      Number.isInteger(teamCounts.power) &&
+      teamCounts.power >= 0
+    ) {
+      document.getElementById("waterCount").textContent = teamCounts.water;
+      document.getElementById("zeroCount").textContent = teamCounts.zero;
+      document.getElementById("powerCount").textContent = teamCounts.power;
+
+      count = teamCounts.water + teamCounts.zero + teamCounts.power;
+      attendeeCount.textContent = count;
+      const percent =
+        Math.min(Math.round((count / max_count) * 100), 100) + "%";
+      document.getElementById("progressBar").style.width = percent;
+    }
+  } catch (error) {
+    console.log("Could not load saved attendance.", error);
+  }
+}
+
+function saveTeamCounts() {
+  const teamCounts = {
+    water: parseInt(document.getElementById("waterCount").textContent),
+    zero: parseInt(document.getElementById("zeroCount").textContent),
+    power: parseInt(document.getElementById("powerCount").textContent),
+  };
+
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(teamCounts));
+  } catch (error) {
+    console.log("Could not save attendance.", error);
+  }
+}
+
+loadSavedCounts();
 
 form.addEventListener("submit", function (event) {
   event.preventDefault();
@@ -25,6 +73,7 @@ form.addEventListener("submit", function (event) {
 
   const teamCounter = document.getElementById(team + "Count");
   teamCounter.textContent = parseInt(teamCounter.textContent) + 1;
+  saveTeamCounts();
 
   const greeting = document.getElementById("greeting");
   let message = `🎉 Welcome, ${name} from ${teamName}`;
@@ -63,8 +112,7 @@ form.addEventListener("submit", function (event) {
     if (equals.length > 0) {
       const equalNames = equals.map((team) => team.name).join(", ");
       message = `🎉 Goal reached! 50 attendees checked in. It's a tie between ${winningTeam.name} and ${equalNames} with ${winningTeam.count} check-ins each!`;
-    } 
-    else {
+    } else {
       message = `🎉 Goal reached! 50 attendees checked in. Winning team: ${winningTeam.name} with ${winningTeam.count} check-ins!`;
     }
   }
